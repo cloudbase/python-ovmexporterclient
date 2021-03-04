@@ -42,29 +42,10 @@ class OVMExporterApp(App):
             '--ca-path',
             default=self._env("OVM_EXPORTER_CAFILE"),
             help='OVM exporter CA certificate file.')
-        
         return parser
 
-    def initialize_app(self, argv):
-        if None in (self.options.ovm_endpoint,
-                    self.options.username,
-                    self.options.password):
-            raise Exception(
-                "Missing auth data. Please specify --ovm-endpoint, "
-                "--username and --password")
-    
     def prepare_to_run_command(self, cmd):
-        kw = {
-            "endpoint": self.options.ovm_endpoint,
-            "username": self.options.username,
-            "password": self.options.password,
-        }
-
-        if self.options.insecure:
-            kw["verify"] = False
-        elif self.options.ca_path is not None:
-            kw["verify"] = self.options.ca_path
-        cmd._ovm_client = client.Client.login(**kw)
+        cmd._cmd_options = self.options
 
 
 def main(argv=sys.argv[1:]):

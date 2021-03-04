@@ -1,6 +1,8 @@
 from cliff.lister import Lister
 from cliff.show import ShowOne
 
+from ovmexporter import client
+
 
 class VirtualMachines(Lister):
 
@@ -9,7 +11,9 @@ class VirtualMachines(Lister):
         return parser
 
     def take_action(self, args):
-        vms = self._ovm_client.get_vms()
+        cli = client.get_client_from_options(
+            self._cmd_options)
+        vms = cli.get_vms()
         ret = [
             ["ID", "Friendly Name", "Snapshots"]
         ]
@@ -34,7 +38,9 @@ class ShowVirtualMachine(ShowOne):
         return parser
     
     def take_action(self, args):
-        vm = self._ovm_client.get_vm(args.id)
+        cli = client.get_client_from_options(
+            self._cmd_options)
+        vm = cli.get_vm(args.id)
         columns = ('ID',
                    'Friendly name',
                    'UUID',

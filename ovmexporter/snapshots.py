@@ -4,6 +4,8 @@ from cliff.lister import Lister
 from cliff.show import ShowOne
 from cliff.command import Command
 
+from ovmexporter import client
+
 
 class ListSnapshots(Lister):
 
@@ -13,7 +15,9 @@ class ListSnapshots(Lister):
         return parser
 
     def take_action(self, args):
-        snapshots = self._ovm_client.get_snapshots(args.vmID)
+        cli = client.get_client_from_options(
+            self._cmd_options)
+        snapshots = cli.get_snapshots(args.vmID)
         ret = [
             ["Snapshot ID",]
         ]
@@ -36,7 +40,9 @@ class CreateSnapshot(ShowOne):
         return parser
 
     def take_action(self, args):
-        snap = self._ovm_client.create_snapshot(args.vmID)
+        cli = client.get_client_from_options(
+            self._cmd_options)
+        snap = cli.create_snapshot(args.vmID)
         columns = ('Snapshot ID',
                    'VM ID',
                    'Disks')
@@ -60,7 +66,9 @@ class ShowSnapshot(ShowOne):
         return parser
 
     def take_action(self, args):
-        snap = self._ovm_client.get_snapshot(args.vmID, args.snapshotID)
+        cli = client.get_client_from_options(
+            self._cmd_options)
+        snap = cli.get_snapshot(args.vmID, args.snapshotID)
         columns = ('Snapshot ID',
                    'VM ID',
                    'Disks')
@@ -83,7 +91,9 @@ class PurgeSnapshots(Command):
         return parser
 
     def take_action(self, args):
-        self._ovm_client.delete_all_snapshots(args.vmID)
+        cli = client.get_client_from_options(
+            self._cmd_options)
+        cli.delete_all_snapshots(args.vmID)
 
 
 class DeleteSnapshot(Command):
@@ -95,7 +105,9 @@ class DeleteSnapshot(Command):
         return parser
 
     def take_action(self, args):
-        self._ovm_client.delete_snapshot(args.vmID, args.snapshotID)
+        cli = client.get_client_from_options(
+            self._cmd_options)
+        cli.delete_snapshot(args.vmID, args.snapshotID)
 
 
 class DownloadSnapshot(Command):
@@ -125,18 +137,20 @@ class DownloadSnapshot(Command):
                 raise ValueError("cannot shrink disk")
             fd.truncate(size)
 
-    def _download_disk(self, args, disk):
-        size = self._ovm_client.get_disk_size(
+    def _download_disk(self, cli, args, disk):
+        size = cli.get_disk_size(
             args.vmID, args.snapshotID, disk["name"])
         download_path = os.path.join(
             args.out_dir, disk["name"].lstrip("/"))
         self._create_or_expand_file(download_path, size)
+
         # read in chunks of 1 MB
         chunk_size = 1 * 1024 * 1024
+
         with open(download_path, "r+b") as fd:
             for chunk in disk["chunks"]:
                 fd.seek(chunk["start"])
-                with self._ovm_client.download_chunk(
+                with cli.download_chunk(
                     args.vmID, args.snapshotID,
                     disk["name"], chunk["start"],
                     chunk["length"], stream=True) as dl:
@@ -149,13 +163,15 @@ class DownloadSnapshot(Command):
             os.makedirs(out_dir)
 
     def take_action(self, args):
+        cli = client.get_client_from_options(
+            self._cmd_options)
         kw = {
             "compare_to": args.diff_from,
             "squash": True,
         }
-        snap = self._ovm_client.get_snapshot(
+        snap = cli.get_snapshot(
             args.vmID, args.snapshotID, **kw)
         self._ensure_out_dir(args.out_dir)
 
         for disk in snap["disks"]:
-            self._download_disk(args, disk)
+            self._download_disk(cli, args, disk)

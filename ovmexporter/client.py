@@ -140,3 +140,27 @@ class Client(object):
         if stream:
             return ret
         return ret.content
+
+
+def _get_auth_kwargs_from_options(options):
+    if None in (options.ovm_endpoint,
+                options.username,
+                options.password):
+        raise Exception(
+            "Missing auth data. Please specify --ovm-endpoint, "
+            "--username and --password")
+    kw = {
+        "endpoint": options.ovm_endpoint,
+        "username": options.username,
+        "password": options.password,
+    }
+    if options.insecure:
+        kw["verify"] = False
+    elif options.ca_path is not None:
+        kw["verify"] = options.ca_path
+    return kw
+
+
+def get_client_from_options(options):
+    kw =  _get_auth_kwargs_from_options(options)
+    return Client.login(**kw)
