@@ -131,6 +131,8 @@ class DownloadSnapshot(Command):
         download_path = os.path.join(
             args.out_dir, disk["name"].lstrip("/"))
         self._create_or_expand_file(download_path, size)
+        # read in chunks of 1 MB
+        chunk_size = 1 * 1024 * 1024
         with open(download_path, "r+b") as fd:
             for chunk in disk["chunks"]:
                 fd.seek(chunk["start"])
@@ -139,7 +141,7 @@ class DownloadSnapshot(Command):
                     disk["name"], chunk["start"],
                     chunk["length"], stream=True) as dl:
 
-                    for data in dl.iter_content(chunk_size=8192): 
+                    for data in dl.iter_content(chunk_size=chunk_size):
                         fd.write(data)
 
     def _ensure_out_dir(self, out_dir):
