@@ -15,13 +15,14 @@ class VirtualMachines(Lister):
             self._cmd_options)
         vms = cli.get_vms()
         ret = [
-            ["ID", "Friendly Name", "Snapshots"]
+            ["ID", "Friendly Name", "Snapshot compatible", "Snapshots"]
         ]
         items = []
         for vm in vms:
             item = [
                 vm["name"],
                 vm["friendly_name"],
+                vm["snapshot_compatible"],
                 "\n".join(vm["snapshots"])
             ]
             items.append(item)
